@@ -1,25 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';  // Import the toast styles
+import { API_BASE_URL, fetchToken } from '../utils/auth';
 
 const ResellerLogin = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    // Replace this with real authentication logic
-    if (username === 'reseller' && password === 'password') {
-      setIsAuthenticated(true);
-      navigate('/dashboard');
-    } else {
-      alert('Invalid credentials');
+  const handleLogin = async () => {
+    try {
+      const token = await fetchToken();
+      const response = await axios.post(
+        `${API_BASE_URL}/Auth/ResellerLogin`,
+        {
+          userId: username,
+          password: password,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'accept': '*/*',
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setIsAuthenticated(true);
+        const { id } = response.data.data; // Extract the id from the response data
+        localStorage.setItem('resellerId', id); // Save id to localStorage
+
+        // Successfully logged in, navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        // Show toast notification for invalid credentials
+        toast.error('Please use valid credentials');
+      }
+    } catch (error) {
+      // Handle error and show toast notification
+      toast.error('Invalid UserId or Password.');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 font-poppins">
       <div className="flex flex-col-reverse md:flex-row p-6 gap-5 bg-white shadow-md rounded-3xl max-w-5xl mx-auto">
-        <div className="w-[70%] flex flex-col items-center justify-between ">
+        <div className="w-[70%] flex flex-col items-center justify-between">
           <div className="flex flex-col mt-10">
             <div className="flex gap-2 items-center">
               <h1 className="text-4xl font-bold mb-4 text-center text-pink-600">Login as a Reseller</h1>
@@ -74,6 +103,7 @@ const ResellerLogin = ({ setIsAuthenticated }) => {
           />
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

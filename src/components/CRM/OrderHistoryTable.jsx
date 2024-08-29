@@ -1,10 +1,57 @@
+import React, { useState, useEffect } from 'react';
 import { DuplicateIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
-import React, { useState } from 'react';
 
-const OrderHistoryTable = ({ data, columns }) => {
+const OrderHistoryTable = ({ columns }) => {
+  const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const recordsPerPage = 10;
   const totalPages = Math.ceil(data.length / recordsPerPage);
+
+  // Simulate API call
+  const fetchOrderHistoryData = async () => {
+    // Replace this with an actual API call
+    return new Promise((resolve) =>
+      setTimeout(() => {
+        resolve([
+          { id: 1, OrderNo: '001', BMID: 'BM001', Date: '2024-07-20', status: 'Done' },
+          { id: 2, OrderNo: '002', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 3, OrderNo: '003', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 4, OrderNo: '004', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 5, OrderNo: '005', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 6, OrderNo: '006', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 7, OrderNo: '007', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 8, OrderNo: '008', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 9, OrderNo: '009', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 10, OrderNo: '009', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 11, OrderNo: '010', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 12, OrderNo: '011', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 13, OrderNo: '012', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 14, OrderNo: '013', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+          { id: 15, OrderNo: '014', BMID: 'BM002', Date: '2024-07-21', status: 'Done' },
+          { id: 16, OrderNo: '015', BMID: 'BM002', Date: '2024-07-21', status: 'Pending' },
+
+        ]);
+      },)
+    );
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const fetchedData = await fetchOrderHistoryData(); // Fetch data using async/await
+        setData(fetchedData);
+      } catch (err) {
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleClickNext = () => {
     setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
@@ -30,6 +77,9 @@ const OrderHistoryTable = ({ data, columns }) => {
   const startIndex = (currentPage - 1) * recordsPerPage;
   const currentPageData = data.slice(startIndex, startIndex + recordsPerPage);
 
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+
   return (
     <>
       <table className='min-w-full border text-xs'>
@@ -54,11 +104,11 @@ const OrderHistoryTable = ({ data, columns }) => {
               <td className='px-4 py-1 border border-customPurple'>{row.BMID}</td>
               <td className='px-4 py-1 border border-customPurple'>{row.Date}</td>
               <td className='px-4 py-1 border border-customPurple'>
-                <button className={`px-2 py-1  text-white rounded ${getStatusButtonColor(row.status)}`}>
+                <button className={`px-2 py-1 text-white rounded ${getStatusButtonColor(row.status)}`}>
                   {row.status}
                 </button>
               </td>
-              <td className='px-4 py-1  flex space-x-2 border '>
+              <td className='px-4 py-1 flex space-x-2 border'>
                 <button className='bg-green-500 p-1 rounded text-white'>
                   <PencilIcon data-tooltip-id="tooltip" data-tooltip-content="Edit" className='h-3 w-3' />
                 </button>

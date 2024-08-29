@@ -1,31 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API_BASE_URL, fetchToken } from '../utils/auth';
 
 const UserListView = () => {
-  const usersData = [
-    { acName: 'Rohit Sharma', memberSince: '11-june-2024', userId: 'UID59110', contact: '+91 9800263240', userType: 'Customer' },
-    { acName: 'Raj Malhotra', memberSince: '11-june-2024', userId: 'UID59112', contact: '+91 9800263240', userType: 'Customer' },
-    { acName: 'Rajeev', memberSince: '11-june-2024', userId: 'UID59114', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rakesh Tomar', memberSince: '11-june-2024', userId: 'UID59115', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59116', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59117', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59118', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59119', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59120', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59121', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59122', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59123', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59124', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59125', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59126', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59127', contact: '+91 9800263240', userType: 'Reseller' },
-    { acName: 'Rajesh', memberSince: '11-june-2024', userId: 'UID59128', contact: '+91 9800263240', userType: 'Reseller' },
-  ];
-
+  const [usersData, setUsersData] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const defaultImage = 'https://metaadsapp.s3.ap-south-1.amazonaws.com/profile_user.png';
+  const baseImageUrl = 'http://3.110.160.106:8080/';
 
-  // Function to toggle selection of a user
+  const fetchData = async () => {
+    try {
+      const token = await fetchToken();
+      const response = await axios.get(
+        `${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log('API Data:', response.data);
+
+      const fetchedData = response.data.data.map(user => ({
+        acName: user.accountName,
+        memberSince: user.createdDate,
+        userId: user.userId,
+        contact: user.contactNumber,
+        image: user.profilePicture ? `${baseImageUrl}${user.profilePicture}` : defaultImage,
+        userType: user.userTypeId
+      }));
+      setUsersData(fetchedData);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const toggleSelectUser = (userId) => {
     if (selectedUsers.includes(userId)) {
       setSelectedUsers(selectedUsers.filter(id => id !== userId));
@@ -34,7 +49,6 @@ const UserListView = () => {
     }
   };
 
-  // Function to handle select all users
   const handleSelectAll = () => {
     if (selectedUsers.length === usersData.length) {
       setSelectedUsers([]);
@@ -43,31 +57,26 @@ const UserListView = () => {
     }
   };
 
-  // Get the current page data
   const startIndex = (currentPage - 1) * pageSize;
   const currentPageData = usersData.slice(startIndex, startIndex + pageSize);
 
-  // Function to handle next page
   const handleNextPage = () => {
     if (startIndex + pageSize < usersData.length) {
       setCurrentPage(currentPage + 1);
     }
   };
 
-  // Function to handle previous page
   const handlePreviousPage = () => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
   };
 
-  // Calculate total pages
   const totalPages = Math.ceil(usersData.length / pageSize);
 
   return (
     <>
-      <div className='flex justify-between mb-3'>
-      </div>
+      <div className='flex justify-between mb-3'></div>
       <div className="overflow-x-auto border border-customPurple rounded-md shadow-custom p-4">
         <table className="min-w-full bg-white text-xs ">
           <thead className="bg-customPurple text-white">
@@ -89,7 +98,7 @@ const UserListView = () => {
           </thead>
           <tbody>
             {currentPageData.map((user, index) => (
-              <tr key={index} className={index % 2 === 0 ? 'bg-gray-200' : ''}>
+              <tr key={user.userId} className={index % 2 === 0 ? 'bg-gray-200' : ''}>
                 <td className="px-2 py-1 border border-customPurple">
                   <input
                     type="checkbox"
@@ -98,9 +107,11 @@ const UserListView = () => {
                     className='w-4 h-4'
                   />
                 </td>
-                <td className="px-1 py-1 border border-customPurple"><img src="https://metaadsapp.s3.ap-south-1.amazonaws.com/profile_user.png" alt="" className="w-8 h-8 rounded-full" /></td>
+                <td className="px-1 py-1 border border-customPurple">
+                  <img src={user.image} alt={user.acName} className="w-8 h-8 rounded-full" />
+                </td>
                 <td className="px-1 py-1 border border-customPurple">{user.acName}</td>
-                <td className="px-1 py-1 border border-customPurple">{user.memberSince}</td>
+                <td className="px-1 py-1 border border-customPurple">{new Date(user.memberSince).toLocaleDateString()}</td>
                 <td className="px-1 py-1 border border-customPurple">{user.userId}</td>
                 <td className="px-1 py-1 border border-customPurple">{user.contact}</td>
               </tr>

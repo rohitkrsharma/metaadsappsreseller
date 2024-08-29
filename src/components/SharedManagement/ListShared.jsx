@@ -4,7 +4,7 @@ import SearchBar from '../SearchBar';
 import ListSharedFormView from './ListSharedFormView';
 import Resubmitted from './Resubmitted';
 
-const ListShared = ({ breadcrumbs, onAdd, view, onToggleView }) => {
+const ListShared = ({ onAdd, view, onToggleView }) => {
   const data = [
     { id: 1, OrderNo: 'OR-BM-ADS-20240706-0921', BMName: 'C00456', status: 'Shared Pass', },
     { id: 2, OrderNo: 'OR-BM-ADS-20240706-0924', BMName: 'C00456', status: 'Shared Fail', },
@@ -78,7 +78,7 @@ const ListShared = ({ breadcrumbs, onAdd, view, onToggleView }) => {
 
         </div>
         <div>
-          <SearchBar onAdd={onAdd}  showAddAndView={true} view={view} onToggleView={onToggleView} />
+          <SearchBar onAdd={onAdd} showAddAndView={true} view={view} onToggleView={onToggleView} />
         </div>
       </div>
       <div className="p-4 border border-customPurple rounded-md shadow-custom">

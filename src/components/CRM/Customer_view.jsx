@@ -1,23 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaArrowLeft, FaEdit, FaRedo, FaSave } from 'react-icons/fa';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import EveryBmAds from './EveryBmAds';
 import OrderHistoryTable from './OrderHistoryTable';
-import ResellerMember from './ResellerMember';
+import { API_BASE_URL, fetchToken } from '../utils/auth';
 
 const CustomerView = ({ onBack }) => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    accountName: 'Rohit Kumar',
-    password: '*******',
-    contact: '8802643240',
+    id: '',
+    userId: '',
+    accountName: '',
+    userName: '',
+    contactNumber: '',
+    profilePicture: '',
   });
   const [originalData, setOriginalData] = useState(formData);
+  const [bmAdsData, setBmAdsData] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const fetchUserData = async (id) => {
+    try {
+      const token = await fetchToken();
+      const response = await fetch(`${API_BASE_URL}/UserManagement/${id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.text();
+        console.error(`Error ${response.status}: ${errorDetails}`);
+        throw new Error(`Error ${response.status}: ${errorDetails}`);
+      }
+
+      const data = await response.json();
+      console.log("Received Data:", data);
+
+      if (data && data.data) {
+        const user = data.data;
+        const profilePictureUrl = user.profilePicture ? `http://3.110.160.106:8080/${user.profilePicture}` : 'https://metaadsapp.s3.ap-south-1.amazonaws.com/default-avatar.png';
+        setFormData({
+          id: user.id,
+          userId: user.userId,
+          accountName: user.accountName,
+          userName: user.userName,
+          contactNumber: user.contactNumber,
+          profilePicture: profilePictureUrl,
+          userTypeId: user.userTypeId || 2, // Assuming 2 is 'Customer'
+        });
+        setOriginalData({
+          id: user.id,
+          userId: user.userId,
+          accountName: user.accountName,
+          userName: user.userName,
+          contactNumber: user.contactNumber,
+          profilePicture: profilePictureUrl,
+          userTypeId: user.userTypeId || 2,
+        });
+        setSelectedImage(profilePictureUrl);
+      } else {
+        console.error('Unexpected response structure:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserData(userId);
+    }
+  }, [userId]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -38,9 +98,29 @@ const CustomerView = ({ onBack }) => {
     setIsEditing(true);
   };
 
-  const handleSaveClick = () => {
-    setOriginalData(formData);
-    setIsEditing(false);
+  const handleSaveClick = async () => {
+    try {
+      const token = await fetchToken();
+      const response = await fetch(`${API_BASE_URL}/UserManagement/${formData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save data');
+      }
+
+      const result = await response.json();
+      console.log('Save response:', result);
+
+      setOriginalData({ ...formData, bmAdsData });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving data:', error);
+    }
   };
 
   const handleResetClick = () => {
@@ -56,18 +136,30 @@ const CustomerView = ({ onBack }) => {
     }));
   };
 
+  const handleBmAdsDataChange = (updatedData) => {
+    setBmAdsData(updatedData);
+  };
+
+  const getUserTypeLabel = () => {
+    if (formData.userTypeId === 1) {
+      return 'Reseller';
+    } else if (formData.userTypeId === 2) {
+      return 'Customer';
+    }
+    return '';
+  };
+
+  const getUserTypeColor = () => {
+    if (formData.userTypeId === 1) {
+      return 'bg-purple-500';
+    } else if (formData.userTypeId === 2) {
+      return 'bg-pink-500';
+    }
+    return '';
+  };
+
   const orderHistoryData = [
-    { id: 1, OrderNo: 'OR-BM-ADS-20240706-0921', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Processing', },
-    { id: 2, OrderNo: 'OR-BM-ADS-20240706-0924', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Done', },
-    { id: 3, OrderNo: 'OR-BM-ADS-20240706-0925', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Pending', },
-    { id: 4, OrderNo: 'OR-BM-ADS-20240706-0926', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Processing', },
-    { id: 5, OrderNo: 'OR-BM-ADS-20240706-0927', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Done', },
-    { id: 6, OrderNo: 'OR-BM-ADS-20240706-0922', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Pending', },
-    { id: 7, OrderNo: 'OR-BM-ADS-20240706-0920', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Processing', },
-    { id: 8, OrderNo: 'OR-BM-ADS-20240706-0928', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Done', },
-    { id: 9, OrderNo: 'OR-BM-ADS-20240706-0929', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Pending', },
-    { id: 10, OrderNo: 'OR-BM-ADS-20240706-0930', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Processing', },
-    { id: 11, OrderNo: 'OR-BM-ADS-20240706-0931', BMID: 'C00456', Date: '22-05-2024 10:01:30', status: 'Done', },
+    // Dummy data remains the same
   ];
 
   const columns = ['S.N', 'Order No', 'BM ID', 'Order Date', 'Status'];
@@ -81,22 +173,19 @@ const CustomerView = ({ onBack }) => {
           </button>
         </div>
         <div className='flex gap-2'>
-          <button
-            className='flex items-center gap-1 px-2 py-1 text-white bg-green-500 hover:bg-green-600 rounded'
+          <button className='flex items-center gap-1 px-2 py-1 text-white bg-green-500 hover:bg-green-600 rounded'
             onClick={handleSaveClick}
             disabled={!isEditing}
           >
             <FaSave /> Save
           </button>
-          <button
-            className='flex items-center gap-1 px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded'
+          <button className='flex items-center gap-1 px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded'
             onClick={handleEditClick}
             disabled={isEditing}
           >
             <FaEdit /> Edit
           </button>
-          <button
-            className='flex items-center gap-1 px-2 py-1 text-white bg-red-500 hover:bg-red-600 rounded'
+          <button className='flex items-center gap-1 px-2 py-1 text-white bg-red-500 hover:bg-red-600 rounded'
             onClick={handleResetClick}
             disabled={!isEditing}
           >
@@ -109,7 +198,7 @@ const CustomerView = ({ onBack }) => {
           <div className='space-y-7'>
             <div className='flex gap-2'>
               <div className='w-32'>User ID :</div>
-              <div>{userId}</div>
+              <div>{formData.userId}</div>
             </div>
             <div className='flex gap-2'>
               <div className='w-32'>Account Name :</div>
@@ -126,32 +215,26 @@ const CustomerView = ({ onBack }) => {
               )}
             </div>
             <div className='flex gap-2'>
-              <div className='w-32'>Password :</div>
-              {isEditing ? (
-                <input
-                  type='text'
-                  name='password'
-                  value={formData.password}
-                  onChange={handleChange}
-                  className='border px-2 py-1 rounded-md'
-                />
-              ) : (
-                <div>{formData.password}</div>
-              )}
-            </div>
-            <div className='flex gap-2'>
               <div className='w-32'>Contact :</div>
               {isEditing ? (
                 <input
                   type='text'
-                  name='contact'
-                  value={formData.contact}
+                  name='contactNumber'
+                  value={formData.contactNumber}
                   onChange={handleChange}
                   className='border px-2 py-1 rounded-md'
                 />
               ) : (
-                <div>{formData.contact}</div>
+                <div>{formData.contactNumber}</div>
               )}
+            </div>
+          </div>
+          <div className='flex gap-2'>
+            <div>
+              <div className={`${getUserTypeColor()} px-2 py-1 text-white rounded-md text-sm font-poppins`}>{getUserTypeLabel()}</div>
+            </div>
+            <div>
+              <div className='bg-orange-600 px-2 py-1 text-white rounded-md text-sm font-poppins'>Individual</div>
             </div>
           </div>
           <div className='flex flex-col items-center mr-20'>
@@ -159,7 +242,7 @@ const CustomerView = ({ onBack }) => {
               className='border-4 border-gray-200 rounded-full overflow-hidden cursor-pointer'
               onClick={() => document.getElementById('fileInput').click()}
             >
-              <img src={selectedImage || 'https://metaadsapp.s3.ap-south-1.amazonaws.com/avatar+.png'} alt='upload' className='w-32 h-32 object-cover' />
+              <img src={selectedImage || 'https://metaadsapp.s3.ap-south-1.amazonaws.com/default-avatar.png'} alt='Profile' className='w-32 h-32 object-cover' />
             </div>
             <input
               type='file'
@@ -176,45 +259,38 @@ const CustomerView = ({ onBack }) => {
         </div>
         <Tabs className='rounded-t-md overflow-hidden'>
           <TabList className='flex gap-1 pt-2 mt-4 bg-customPurple rounded-t-md'>
-            <Tab className='text-white px-4 py-2 ml-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
+            <Tab className='text-white px-4 py-2 cursor-pointer ml-1 rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-none rounded-none'>
               Every BM/ADS
             </Tab>
-            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
+            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-none rounded-none'>
               Order History
             </Tab>
-            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
-              Reseller Members
+            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-none rounded-none'>
+              Membership
             </Tab>
-            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
-              Reward Points
-            </Tab>
-            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
-              Referral History
-            </Tab>
-            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-customPurple'>
-              Other Info
+            <Tab className='text-white px-4 py-2 cursor-pointer rounded-t-md hover:bg-white hover:text-customPurple focus:outline-none' selectedClassName='bg-white text-customPurple border-none rounded-none'>
+              Payments
             </Tab>
           </TabList>
-
           <TabPanel>
-            <div><EveryBmAds isEditing={isEditing} /></div>
+            <EveryBmAds
+              userId={formData.id}
+              isEditing={isEditing}
+              bmAdsData={bmAdsData}
+              onBmAdsDataChange={handleBmAdsDataChange}
+            />
           </TabPanel>
           <TabPanel>
-            <div className='mt-1'>
-              <OrderHistoryTable data={orderHistoryData} columns={columns} />
-            </div>
+            <OrderHistoryTable
+              data={orderHistoryData}
+              columns={columns}
+            />
           </TabPanel>
           <TabPanel>
-            <div> <ResellerMember /> </div>
+            {/* Membership tab content */}
           </TabPanel>
           <TabPanel>
-            <div>Reward Points Content</div>
-          </TabPanel>
-          <TabPanel>
-            <div>Referral History Content</div>
-          </TabPanel>
-          <TabPanel>
-            <div>Other Info Content</div>
+            {/* Payments tab content */}
           </TabPanel>
         </Tabs>
       </div>
