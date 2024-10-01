@@ -20,7 +20,7 @@ const AddForm = ({ onBack, onAddSuccess }) => {
     file: null,
     cryptoNetworkImage: '',
     cryptoNetworkName: '',
-    Name: '', // Added Name field
+    Name: '',
   });
   const [loading, setLoading] = useState(false);
   const [deposits, setDeposits] = useState([]);
@@ -55,7 +55,7 @@ const AddForm = ({ onBack, onAddSuccess }) => {
       });
 
       // Fetch deposit data
-      const depositsResponse = await fetch(`${API_BASE_URL}/CryptoAddresses`, {
+      const depositsResponse = await fetch(`${API_BASE_URL}/CryptoAddresses/GetActiveCryptoAddresses`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -80,7 +80,7 @@ const AddForm = ({ onBack, onAddSuccess }) => {
     setIsLoading(true);
     try {
       const token = await fetchToken();
-      const response = await axios.get('http://3.110.160.106:8080/api/UserManagement/GetResellerCustomersDrp?resellerId=1', {
+      const response = await axios.get(`${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=${resellerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -88,8 +88,8 @@ const AddForm = ({ onBack, onAddSuccess }) => {
 
       const customerOptions = response.data.data.map((customer) => ({
         value: customer.id,
-        label: customer.name,
-        name: customer.name,
+        label: customer.accountName,
+        name: customer.accountName,
       }));
 
       setCustomers(customerOptions);
@@ -171,6 +171,14 @@ const AddForm = ({ onBack, onAddSuccess }) => {
     submitData.append('InvoiceDocument', invoice.invoiceNumber);
     submitData.append('DocFile', formData.file);
     submitData.append('CreatedBy', 'Rohit');
+    submitData.append('UserTypeId', formData.UserTypeId);
+    submitData.append('ResellerId', formData.ResellerId);
+    submitData.append('UserManagementId', formData.UserManagementId);
+    submitData.append('Name', formData.Name);
+
+    for (let pair of submitData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
 
     try {
       setLoading(true);
@@ -193,9 +201,9 @@ const AddForm = ({ onBack, onAddSuccess }) => {
       }
 
       const result = await response.json();
-      onAddSuccess(result);
-
-      navigate('/ListWallet');
+      console.log('Form submitted successfully', result);
+      // onAddSuccess(result);
+      navigate('/wallet/topup');
     } catch (error) {
       console.error('Error adding data:', error);
     } finally {
@@ -220,29 +228,37 @@ const AddForm = ({ onBack, onAddSuccess }) => {
       <div className="bg-white border border-customPurple rounded-md shadow-custom p-4">
         <div className="mb-4">
           <div>
-            <div className="flex items-center gap-5 mt-4 mb-4">
-              <label htmlFor="UserTypeId" className='w-44'>User Type:</label>
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="self"
-                  name="UserTypeId"
-                  value="1"
-                  checked={formData.UserTypeId === 1}
-                  onChange={handleUserTypeChange}
-                  className="mr-2"
-                />
-                <label htmlFor="self" className="mr-4">Self</label>
-                <input
-                  type="radio"
-                  id="customer"
-                  name="UserTypeId"
-                  value="2"
-                  checked={formData.UserTypeId === 2}
-                  onChange={handleUserTypeChange}
-                  className="mr-2"
-                />
-                <label htmlFor="customer">Customer</label>
+            <div className="flex justify-between items-center gap-5 mt-4 mb-4">
+              <div className='flex'>
+                <label htmlFor="UserTypeId" className='w-44'>User Type:</label>
+                <div className="flex items-center">
+                  <input
+                    type="radio"
+                    id="self"
+                    name="UserTypeId"
+                    value="1"
+                    checked={formData.UserTypeId === 1}
+                    onChange={handleUserTypeChange}
+                    className="mr-2"
+                  />
+                  <label htmlFor="self" className="mr-4">Self</label>
+                  <input
+                    type="radio"
+                    id="customer"
+                    name="UserTypeId"
+                    value="2"
+                    checked={formData.UserTypeId === 2}
+                    onChange={handleUserTypeChange}
+                    className="mr-2"
+                  />
+                  <label htmlFor="customer">Customer</label>
+                </div>
+              </div>
+              <div className="flex font-semibold">
+                <label className='w-44'>Invoice Date:</label>
+                <div className="form-control ">
+                  {invoice.invoiceDate}
+                </div>
               </div>
             </div>
             {formData.UserTypeId === 2 && (
@@ -261,23 +277,20 @@ const AddForm = ({ onBack, onAddSuccess }) => {
                 />
               </div>
             )}
-            <div className="flex mb-4">
-              <label className='w-52'>Name:</label>
-              <input
-                type="text"
-                name="name"
-                className="form-control w-full p-2 border border-gray-300 rounded"
-                value={formData.Name}
-                onChange={handleInputChange}
-                placeholder="Enter name"
-              />
-            </div>
-            <div className="flex mb-4">
-              <label className='w-44'>Invoice Date:</label>
-              <div className="form-control ">
-                {invoice.invoiceDate}
-              </div>
-            </div>
+            {
+              formData.UserTypeId === 1 && (
+                <div className="flex mb-4">
+                  <label className='w-52'>Name:</label>
+                  <input
+                    type="text"
+                    name="Name"
+                    className="form-control w-full p-2 border border-gray-300 rounded"
+                    value={formData.Name}
+                    onChange={handleInputChange}
+                    placeholder="Enter name"
+                  />
+                </div>
+              )}
             <div className="flex mb-4  items-center">
               <label className='w-52'>USD/deposit Address:</label>
               <select
@@ -323,7 +336,7 @@ const AddForm = ({ onBack, onAddSuccess }) => {
             <div className="flex mb-4">
               <label className='w-52'>Charge Amount:</label>
               <input
-                type="text"
+                type="number"
                 name="chargeAmount"
                 className="form-control w-full p-2 border border-gray-300 rounded"
                 value={formData.chargeAmount}

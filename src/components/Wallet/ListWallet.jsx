@@ -5,6 +5,7 @@ import ListWalletView from './ListWalletView';
 import { API_BASE_URL, fetchToken } from '../utils/auth';
 
 const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
+  const resellerId = localStorage.getItem('resellerId');
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
@@ -22,7 +23,7 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
     const fetchData = async () => {
       try {
         const token = await fetchToken();
-        const response = await fetch(`http://3.110.160.106:8080/api/Invoices/GetResellerInvoices?resellerId=1`, {
+        const response = await fetch(`${API_BASE_URL}/Invoices/GetResellerInvoices?resellerId=${resellerId}`, {
           method: 'GET',
           headers: {
             'accept': '*/*',
@@ -40,9 +41,10 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
             id: invoice.id,
             InvoiceNo: invoice.invoiceNumber,
             Charge: invoice.chargeAmount,
-            Date: new Date(invoice.invoiceDate).toLocaleDateString(),
+            Date: new Date(invoice.invoiceDate).toISOString(),
             Token: invoice.transactionId,
             status: invoice.status,
+            invoiceDocument: invoice.invoiceDocument,
           })));
         } else {
           console.error('Expected result.data to be an array but got:', result.data);
@@ -161,7 +163,17 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
           <div></div>
         </div>
         <div>
-          <SearchBar onAdd={onAdd} view={view} onToggleView={onToggleView} onSearchTermChange={handleSearchTermChange} />
+          <SearchBar
+            onSearchTermChange={handleSearchTermChange}
+            onAdd={onAdd}
+            onToggleView={onToggleView}
+            currentView={view}
+            showAddAndView={true}
+            searchPlaceholder="Search by invoice No"
+            filterOptions={['Filter1', 'Filter2', 'Filter ']}
+            groupByOptions={['Category', 'Price', 'Brand']}
+            favoritesOptions={['Favorite', 'Favorite']}
+          />
         </div>
       </div>
       <div className="p-4 border border-customPurple rounded-md shadow-custom">

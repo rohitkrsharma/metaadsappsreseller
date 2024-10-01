@@ -5,6 +5,8 @@ import axios from 'axios';
 import { API_BASE_URL, fetchToken } from '../utils/auth';
 import { DateTime } from 'luxon';
 import { toast, ToastContainer } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
+import Modal from 'react-modal';
 
 const timeZoneOptions = [
   { value: 'Asia/Kolkata', label: 'Asia/India' },
@@ -16,11 +18,13 @@ const timeZoneOptions = [
 
 const AddBM = ({ onBack, showBackButton }) => {
   const resellerId = localStorage.getItem('resellerId');
-
+  const navigate = useNavigate();
+  const [calculationData, setCalculationData] = useState(null); // State for holding the calculation data
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     UserTypeId: 1,
     UserManagementId: resellerId, // Set UserManagementId to resellerId initially
-    ResellerId: resellerId, // Make sure ResellerId is set correctly
+    ResellerId: resellerId,
     Name: '',
     bmId: '',
     numberOfAccounts: '',
@@ -29,14 +33,13 @@ const AddBM = ({ onBack, showBackButton }) => {
     selfProfileLink: '',
     topUpAmount: '',
     Status: 0,
-    CreatedBy: resellerId, // Set CreatedBy to resellerId
+    CreatedBy: resellerId,
     CreatedDate: new Date().toISOString(),
     UpdatedDate: new Date().toISOString(),
     UpdatedBy: resellerId,
-    RedeemedAmount: '12',
+    numberOfFreeAccountsOrCoupons: 0,
+    RedeemedAmount: 0,
   });
-
-
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [timeZonesWithCurrentTime, setTimeZonesWithCurrentTime] = useState([]);
@@ -58,11 +61,17 @@ const AddBM = ({ onBack, showBackButton }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (formData.UserTypeId === 2) {
+      fetchCustomers();
+    }
+  }, [formData.UserTypeId]);
+
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
       const token = await fetchToken();
-      const response = await axios.get(`${API_BASE_URL}/UserManagement/GetResellerCustomersDrp?resellerId=1`, {
+      const response = await axios.get(`${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=${resellerId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -70,8 +79,9 @@ const AddBM = ({ onBack, showBackButton }) => {
 
       const customerOptions = response.data.data.map((customer) => ({
         value: customer.id,
-        label: customer.name,
-        name: customer.name,
+        label: customer.accountName,
+        name: customer.accountName,
+        numberOfFreeAccountsOrCoupons: customer.numberOfFreeAccountsOrCoupons,
       }));
 
       setCustomers(customerOptions);
@@ -87,11 +97,12 @@ const AddBM = ({ onBack, showBackButton }) => {
     setFormData((prevFormData) => ({
       ...prevFormData,
       UserTypeId: newUserType,
-      UserManagementId: newUserType === 1 ? resellerId : prevFormData.UserManagementId, // Set resellerId for Self
+      UserManagementId: newUserType === 1 ? resellerId : '', // Set resellerId for Self
       Name: '', // Clear name field when changing user type
+      numberOfFreeAccountsOrCoupons: newUserType === 1 ? formData.numberOfFreeAccountsOrCoupons : 0, // Reset for customer
+      RedeemedAmount: 0, // Reset redeem amount
     }));
   };
-
 
   useEffect(() => {
     console.log('Form Data:', formData);
@@ -99,24 +110,105 @@ const AddBM = ({ onBack, showBackButton }) => {
 
 
   const handleCustomerSelect = (selectedOption) => {
+    const selectedCustomer = customers.find(customer => customer.value === selectedOption.value);
+
     setFormData((prevFormData) => ({
       ...prevFormData,
-      UserManagementId: selectedOption ? selectedOption.value : '', // Update UserManagementId based on selected customer
+      UserManagementId: selectedOption ? selectedOption.value : '',
       Name: selectedOption ? selectedOption.name : '',
+      numberOfFreeAccountsOrCoupons: selectedCustomer ? selectedCustomer.numberOfFreeAccountsOrCoupons : 0,
+      RedeemedAmount: 0, // Reset the redeemed amount initially
     }));
   };
 
+
+  // const handleChange = (e) => {
+  //   const { id, value, type, checked } = e.target;
+  //   setFormData((prevFormData) => ({
+  //     ...prevFormData,
+  //     [id]: type === 'checkbox' ? checked : value,
+  //   }));
+  // };
+
   const handleChange = (e) => {
-    const { id, value, type, checked } = e.target;
+    const { id, value } = e.target;
     setFormData((prevFormData) => ({
       ...prevFormData,
-      [id]: type === 'checkbox' ? checked : value,
+      [id]: value,
+    }));
+  };
+
+  const handleRedeemCheckboxChange = (e) => {
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      RedeemedAmount: e.target.checked ? formData.numberOfFreeAccountsOrCoupons : 0, // If checked, use the redeem amount
     }));
   };
 
   const handleSubmit = async () => {
-    console.log('Submitting data:', formData); // Check the value of ResellerId here
+    try {
+      const token = await fetchToken();
+      const apiUrl = `${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=${resellerId}`;
+      // Fetch all data concurrently
+      const response = await axios.get(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const data = response.data.data;
 
+      const selectedOption = formData.UserManagementId;
+      const customerData = data.find(item => item.id === selectedOption);
+      const {
+        baseFee,
+        commission: totalCommission,
+        numberOfAccounts: noOfAccountUser,
+        numberOfPages: noOfPagesUser,
+        additionalAccountFees: additionalAccountFee,
+        additionalPageFees: additionalPageFee,
+        numberOfFreeAccountsOrCoupons: numberOfFreeAccountsOrCoupons,
+      } = customerData;
+      // Calculate additional fees
+      const additionalAcoountFee = formData.numberOfAccounts > noOfAccountUser
+        ? (formData.numberOfAccounts - noOfAccountUser) * additionalAccountFee
+        : 0;
+
+      const additionalPageFees = formData.numberOfPages > noOfPagesUser
+        ? (formData.numberOfPages - noOfPagesUser) * additionalPageFee
+        : 0;
+
+      // Calculate the total
+      const total = (
+        Number(baseFee) +
+        Number(formData.topUpAmount) +
+        Number(totalCommission) +
+        Number(additionalAcoountFee) +
+        Number(additionalPageFees) -
+        Number(numberOfFreeAccountsOrCoupons)
+      );
+      console.log("T", total);
+
+      const calculatedData = {
+        baseFee,
+        topUpAmount: formData.topUpAmount,
+        totalCommission,
+        noOfAccountBm: formData.numberOfAccounts,
+        noOfAccountUser,
+        noOfPagesBm: formData.numberOfPages,
+        noOfPagesUser,
+        additionalAcoountFee,
+        additionalPageFees,
+        numberOfFreeAccountsOrCoupons,
+        total,
+      };
+      console.log('Calculated Data:', calculatedData);
+      setCalculationData(calculatedData);
+      setIsModalOpen(true);
+
+    } catch (error) {
+      console.error('Error fetching calculation data:', error);
+      toast.error('Error fetching calculation data');
+    }
+  };
+
+  const handleConfirmSubmit = async () => {
+    // Submit after confirmation
     try {
       const token = await fetchToken();
       const form = new FormData();
@@ -127,33 +219,32 @@ const AddBM = ({ onBack, showBackButton }) => {
       const response = await fetch(`${API_BASE_URL}/BMAdsOrders`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: form,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error response from server:', errorData);
-
-        // Assuming errorData contains an array of validation errors
-        for (const [field, errors] of Object.entries(errorData.errors)) {
+        for (const [errors] of Object.entries(errorData.errors)) {
           if (Array.isArray(errors) && errors.length > 0) {
-            toast.error(errors[0]); // Show the first error message
-            break; // Stop after showing the first error message
+            toast.error(errors[0]);
+            break;
           }
         }
-
         throw new Error('Network response was not ok');
       }
-
       const responseData = await response.json();
       console.log('Data submitted successfully:', responseData);
+      navigate('/bm/approval');
+      onBack();
     } catch (error) {
       console.error('Error submitting data:', error);
+      toast.error('Error submitting data');
+    } finally {
+      setIsModalOpen(false);
     }
   };
-
 
   return (
     <div className="container">
@@ -215,7 +306,7 @@ const AddBM = ({ onBack, showBackButton }) => {
                   placeholder="Select Customer"
                   isClearable
                   className='w-[38%]'
-                  onMenuOpen={fetchCustomers}  // Fetch customers when dropdown opens
+                  onMenuOpen={fetchCustomers}
                   isLoading={isLoading}
                 />
               </div>
@@ -311,18 +402,122 @@ const AddBM = ({ onBack, showBackButton }) => {
               />
             </div>
           </div>
-          <div className='flex items-center gap-5'>
-            <input
-              type="checkbox"
-              id="redeem"
-              className="form-checkbox"
-              checked={formData.redeem}
-              onChange={handleChange}
-            />
-            <label htmlFor="redeem" className="text-md w-36 text-gray-700 font-semibold">Redeem $12</label>
-          </div>
+          {formData.numberOfFreeAccountsOrCoupons > 0 && (
+            <div className='flex items-center gap-5'>
+              <input
+                type="checkbox"
+                id="redeemCheckbox"
+                className="form-checkbox"
+                checked={formData.RedeemedAmount > 0}
+                onChange={handleRedeemCheckboxChange}
+              />
+              <label htmlFor="redeemCheckbox" className="text-md w-36 text-gray-700 font-semibold">
+                Redeem ${formData.numberOfFreeAccountsOrCoupons}
+              </label>
+            </div>
+          )}
         </div>
       </div>
+      {/* Modal for confirmation */}
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        className="fixed inset-0 flex items-center justify-center z-50"
+        overlayClassName="fixed inset-0 bg-gray-500 bg-opacity-75"
+      >
+        <div className="bg-white p-6 rounded-lg shadow-lg w-1/2">
+          <h2 className="text-xl font-bold mb-4">Confirm Submission</h2>
+          {calculationData ? (
+            <div className="space-y-3">
+              <div className="flex justify-between font-semibold px-1">
+                <p>Base Fee:</p>
+                <p>{calculationData.baseFee}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>Top-up Amount:</p>
+                <p>{formData.topUpAmount}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>Total Commission:</p>
+                <p>{calculationData.totalCommission}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>No of Account BM/ADS:</p>
+                <p>{formData.numberOfAccounts}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>No of Account User:</p>
+                <p>{calculationData.noOfAccountUser}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>Additional Account Fee:</p>
+                <p>{calculationData.additionalAcoountFee}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>No of pages BM:</p>
+                <p>{formData.numberOfPages}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>No of pages User:</p>
+                <p>{calculationData.noOfPagesUser}</p>
+              </div>
+              <hr />
+              <div className="flex justify-between font-semibold px-1">
+                <p>Additional Page Fee:</p>
+                <p>{calculationData.additionalPageFees}</p>
+              </div>
+              <hr />
+
+              {/* Conditional Redeem Amount Display */}
+              {formData.RedeemedAmount > 0 && (
+                <>
+                  <div className="flex justify-between font-bold px-1 text-red-600">
+                    <p>Redeem Amount</p>
+                    <p>- {formData.RedeemedAmount}</p>
+                  </div>
+                  <hr />
+                </>
+              )}
+
+              {/* Total with or without Redeem Amount */}
+              <div className="flex justify-between font-bold px-1 text-lg">
+                <p>Total:</p>
+                <p>
+                  {formData.RedeemedAmount > 0
+                    ? calculationData.total - formData.RedeemedAmount
+                    : calculationData.total}
+                </p>
+              </div>
+
+              <div className="flex justify-end mt-6 ">
+                <button
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 mr-4"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                  onClick={handleConfirmSubmit}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          )}
+        </div>
+      </Modal>
+
+
       <ToastContainer />
     </div>
   );

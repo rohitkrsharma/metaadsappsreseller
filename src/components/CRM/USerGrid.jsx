@@ -8,6 +8,7 @@ import classNames from "classnames";
 
 // ProfileCard component
 const ProfileCard = ({ userId, id, name, contact, member, profilePicture }) => {
+
   const navigate = useNavigate();
 
   const cardClasses = classNames(
@@ -47,13 +48,13 @@ const ProfileCard = ({ userId, id, name, contact, member, profilePicture }) => {
         </div>
         <div className="flex justify-end items-center gap-2 mt-5">
           <div
-            className="bg-purple-600 hover:bg-purple-700 text-xs px-2 py-1 rounded-md text-white font-medium cursor-pointer"
+            className="border border-purple-700 text-xs px-2 py-1 rounded-md text-purple-700 font-medium cursor-pointer"
           >
             Customer
           </div>
           <div
             className="bg-green-600 hover:bg-green-700 text-xs px-2 py-1 rounded-md text-white font-medium cursor-pointer"
-            onClick={() => navigate(`/customer-view/${id}`)}  // Passing the `id` prop for navigation
+            onClick={() => navigate(`/customer-view/${id}`)}
           >
             View Details
           </div>
@@ -65,6 +66,7 @@ const ProfileCard = ({ userId, id, name, contact, member, profilePicture }) => {
 
 // UserGrid component
 const UserGrid = () => {
+  const resellerId = localStorage.getItem('resellerId');
   const [view, setView] = useState('grid');
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [users, setUsers] = useState([]);
@@ -75,7 +77,7 @@ const UserGrid = () => {
   const fetchData = async () => {
     try {
       const token = await fetchToken();
-      const response = await fetch(`${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=1`, {
+      const response = await fetch(`${API_BASE_URL}/UserManagement/GetResellerCustomers?resellerId=${resellerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -129,6 +131,11 @@ const UserGrid = () => {
     setShowAddCustomer(false);
   };
 
+  const onCustomerAdded = () => {
+    setShowAddCustomer(false);
+    fetchData(); // Refresh the grid after adding a new customer
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -137,22 +144,34 @@ const UserGrid = () => {
       {!showAddCustomer && (
         <div className='flex justify-between mb-3'>
           <div></div>
-          <div><SearchBar onToggleView={onToggleView} showAddAndView={true} currentView={view} onAdd={onAddCustomer} onSearchTermChange={handleSearchTermChange} /></div>
+          <div>
+            <SearchBar
+              onSearchTermChange={handleSearchTermChange}
+              onAdd={onAddCustomer}
+              onToggleView={onToggleView}
+              currentView={view}
+              showAddAndView={true}
+              searchPlaceholder="Search by name or contact number"
+              filterOptions={['Filter1', 'Filter2', 'Filter3']}
+              groupByOptions={['Category', 'Price', 'Brand']}
+              favoritesOptions={['Favorite', 'Favorite']}
+            />
+          </div>
         </div>
       )}
       {showAddCustomer ? (
-        <AddCustomer onBack={onBack} />
+        <AddCustomer onBack={onBack} onCustomerAdded={onCustomerAdded} />
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {filteredUsers.map((user) => (
             <ProfileCard
-              key={user.id}  // Ensure the key matches the user ID
-              id={user.id}  // Pass the unique user ID for navigation
-              userId={user.userId}  // Display User ID in the card
-              name={user.accountName}  // Display user name in the card
-              member={user.createdDate}  // Display member since date
-              contact={user.contactNumber}  // Display contact information
-              profilePicture={user.profilePicture}  // Display profile picture
+              key={user.id}
+              id={user.id}
+              userId={user.userId}
+              name={user.accountName}
+              member={user.createdDate}
+              contact={user.contactNumber}
+              profilePicture={user.profilePicture}
             />
           ))}
         </div>

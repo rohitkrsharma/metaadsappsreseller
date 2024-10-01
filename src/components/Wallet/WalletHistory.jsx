@@ -1,16 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { DuplicateIcon, PencilIcon, TrashIcon } from '@heroicons/react/solid';
 import SearchBar from '../SearchBar';
-import ListWalletView from './ListWalletView';
 import { API_BASE_URL, fetchToken } from '../utils/auth';
 
-const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
+const ListWallet = ({ onAdd, onToggleView, view }) => {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [editRowId, setEditRowId] = useState(null);
-  const [editRowData, setEditRowData] = useState({});
   const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,7 +42,7 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
               id: invoice.id,
               InvoiceNo: invoice.invoiceNumber,
               Charge: invoice.chargeAmount,
-              Date: new Date(invoice.invoiceDate).toLocaleDateString(),
+              Date: new Date(invoice.invoiceDate).toISOString(),
               Token: invoice.transactionId,
               status: invoice.status,
             }))
@@ -107,10 +103,15 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
         </div>
         <div>
           <SearchBar
+            onSearchTermChange={handleSearchTermChange}
             onAdd={onAdd}
-            view={view}
             onToggleView={onToggleView}
-            onSearchTermChange={handleSearchTermChange} // Pass the search handler
+            currentView={view}
+            showAddAndView={true}
+            searchPlaceholder="Search by invoice No"
+            filterOptions={['Filter1', 'Filter2', 'Filter ']}
+            groupByOptions={['Category', 'Price', 'Brand']}
+            favoritesOptions={['Favorite', 'Favorite']}
           />
         </div>
       </div>
@@ -130,9 +131,8 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
             {currentData.map((item, index) => (
               <tr
                 key={item.id}
-                className={`cursor-pointer border-b border-customPurple ${
-                  index % 2 === 0 ? 'bg-gray-200' : ''
-                }`}
+                className={`cursor-pointer border-b border-customPurple ${index % 2 === 0 ? 'bg-gray-200' : ''
+                  }`}
               >
                 <td className="px-4 py-1 border-r border-customPurple">
                   {(currentPage - 1) * itemsPerPage + index + 1}
@@ -174,9 +174,8 @@ const ListWallet = ({ breadcrumbs, onAdd, onToggleView, view }) => {
               <button
                 key={i + 1}
                 onClick={() => handlePageClick(i + 1)}
-                className={`px-2 py-1 bg-gray-200 mr-1 rounded ${
-                  currentPage === i + 1 ? 'bg-customPurple text-white' : ''
-                }`}
+                className={`px-2 py-1 bg-gray-200 mr-1 rounded ${currentPage === i + 1 ? 'bg-purple-600 text-white' : ''
+                  }`}
               >
                 {i + 1}
               </button>

@@ -78,7 +78,7 @@ const ListShared = ({ onAdd, view, onToggleView }) => {
 
         </div>
         <div>
-          <SearchBar onAdd={onAdd} showAddAndView={true} view={view} onToggleView={onToggleView} />
+          <SearchBar onAdd={onAdd} showAddAndView={true} view={view} onToggleView={onToggleView} placeholder={'Search by order No'} />
         </div>
       </div>
       <div className="p-4 border border-customPurple rounded-md shadow-custom">

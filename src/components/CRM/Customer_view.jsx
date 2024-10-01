@@ -153,7 +153,7 @@ const CustomerView = ({ onBack }) => {
     if (formData.userTypeId === 1) {
       return 'bg-purple-500';
     } else if (formData.userTypeId === 2) {
-      return 'bg-pink-500';
+      return 'bg-purple-500';
     }
     return '';
   };

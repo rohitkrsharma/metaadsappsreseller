@@ -30,8 +30,9 @@ const AdsApproval = ({ onAdd, view, onToggleView }) => {
           throw new Error('Network response was not ok');
         }
         const result = await response.json();
-        setData(result.data);
-        setFilteredData(result.data); // Initialize filteredData
+        const reversedData = result.data.reverse();
+        setData(reversedData);
+        setFilteredData(reversedData);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -54,13 +55,28 @@ const AdsApproval = ({ onAdd, view, onToggleView }) => {
     }
   };
 
-  const handleRowClick = (row) => {
-    setSelectedRow(row);
+  const handleRowClick = async (row) => {
+    try {
+      const token = await fetchToken();
+      const response = await fetch(`${API_BASE_URL}/BMAdsOrders/${row.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const result = await response.json();
+      setSelectedRow(result);
+    } catch (error) {
+      setError(error.message);
+    }
   };
+
 
   const handleBack = () => {
     setSelectedRow(null);
-    setEditingRow(null); // Clear edit state on back
+    setEditingRow(null);
   };
 
   const handleNextPage = () => {
@@ -162,10 +178,15 @@ const AdsApproval = ({ onAdd, view, onToggleView }) => {
         </div>
         <div>
           <SearchBar
-            onAdd={onAdd}
-            showAddAndView={true}
-            view={view} onToggleView={onToggleView}
             onSearchTermChange={handleSearchTermChange}
+            onAdd={onAdd}
+            onToggleView={onToggleView}
+            currentView={view}
+            showAddAndView={true}
+            searchPlaceholder="'Search by name or contact number"
+            filterOptions={['Filter1', 'Filter2', 'Filter ']}
+            groupByOptions={['Category', 'Price', 'Brand']}
+            favoritesOptions={['Favorite', 'Favorite']}
           />
         </div>
       </div>

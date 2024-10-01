@@ -100,7 +100,7 @@ const EveryBmAds = ({ userId, isEditing }) => {
             )}
           </div>
           <div className='flex gap-2 items-center'>
-            <label className='w-60'>Additional A/C Fee :</label>
+            <label className='w-60 font-semibold text-red-700'>Additional A/C Fee :</label>
             {isEditing ? (
               <input
                 type='text'
@@ -110,7 +110,7 @@ const EveryBmAds = ({ userId, isEditing }) => {
                 className='border px-2 py-1 rounded-md'
               />
             ) : (
-              <label>{bmAdsData.additionalFee}</label>
+              <label className='text-red-700'>{bmAdsData.additionalFee}</label>
             )}
           </div>
         </div>
@@ -145,7 +145,7 @@ const EveryBmAds = ({ userId, isEditing }) => {
               )}
             </div>
             <div className='flex gap-2 items-center'>
-              <label className='w-60'>A/C Free/Free coupon :</label>
+              <label className='w-60 text-red-700 font-semibold'> Additional Page fee:</label>
               {isEditing ? (
                 <input
                   type='text'
@@ -155,7 +155,7 @@ const EveryBmAds = ({ userId, isEditing }) => {
                   className='border px-2 py-1 rounded-md'
                 />
               ) : (
-                <label>{bmAdsData.couponFee}</label>
+                <label className='text-red-700 font-semibold'>{bmAdsData.couponFee}</label>
               )}
             </div>
           </div>
@@ -167,7 +167,7 @@ const EveryBmAds = ({ userId, isEditing }) => {
       </div>
       <div className='flex-1 justify-between'>
         <div className='flex gap-2 items-center'>
-          <label className='w-44'>No of A/C :</label>
+          <label className='w-44'>Amount :</label>
           {isEditing ? (
             <input
               type='text'

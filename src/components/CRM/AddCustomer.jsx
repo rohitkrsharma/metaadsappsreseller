@@ -8,7 +8,7 @@ import OrderHistoryTable from './OrderHistoryTable';
 import ResellerMember from './ResellerMember';
 
 
-const AddCustomer = ({ onBack }) => {
+const AddCustomer = ({ onBack, onCustomerAdded }) => {
   const resellerId = localStorage.getItem('resellerId');
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -22,6 +22,7 @@ const AddCustomer = ({ onBack }) => {
     baseFee: '',
     numberOfFreeAccountsOrCoupons: '',
     numberOfPages: '',
+    additionalPageFees: '',
     profilePicture: selectedImage,
     ContactNumber: '',
     UserTypeId: '2',
@@ -65,7 +66,6 @@ const AddCustomer = ({ onBack }) => {
           body: submissionData,
         });
       } else {
-        // Add logic
         response = await fetch(`${API_BASE_URL}/UserManagement`, {
           method: 'POST',
           headers: {
@@ -77,6 +77,7 @@ const AddCustomer = ({ onBack }) => {
 
       if (response.ok) {
         console.log('Data submitted successfully');
+        onCustomerAdded();
         // Optionally reset the form or show a success message
       } else {
         const errorData = await response.json();
