@@ -57,7 +57,7 @@ const Navbar = ({ isCollapsed, toggleCollapsed }) => {
         {isCollapsed ? <HiMenu className="text-2xl" /> : <HiMenuAlt1 className="text-2xl" />}
       </button>
       <div className="flex items-center space-x-4">
-        <button className="flex items-center px-4 py-2 bg-customPurple font-medium text-white rounded-md hover:bg-hcolor">
+        <button className="flex items-center px-4 py-2 font-medium border-2 border-purple-800 rounded-md text-black">
           <FaWallet className="mr-2" />
           Wallet $ {walletBalance}
         </button>

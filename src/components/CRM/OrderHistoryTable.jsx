@@ -18,6 +18,7 @@ const OrderHistoryTable = () => {
       setLoading(true);
       try {
         const token = await fetchToken();
+        // Fetch all orders
         const response = await fetch(`${API_BASE_URL}/BMAdsOrders/GetResellerBMAdsOrders?resellerId=${resellerId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -28,7 +29,7 @@ const OrderHistoryTable = () => {
         }
         const result = await response.json();
         setData(result.data);
-        setFilteredData(result.data);
+        setFilteredData(result.data); // Store all data initially
       } catch (error) {
         setError(error.message);
       } finally {
@@ -51,22 +52,7 @@ const OrderHistoryTable = () => {
     }
   };
 
-  const handleRowClick = async (row) => {
-    try {
-      const token = await fetchToken();
-      const response = await fetch(`${API_BASE_URL}/BMAdsOrders/${row.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const result = await response.json();
-    } catch (error) {
-      setError(error.message);
-    }
-  };
+
 
   const handleNextPage = () => {
     if (currentPage < Math.ceil(filteredData.length / pageSize)) {
@@ -156,7 +142,6 @@ const OrderHistoryTable = () => {
   }
   return (
     <>
-
       <div className='mt-[1px]'>
         <div>
           <table className="min-w-full border-t border-l border-r text-xs border-b border-customPurple">
@@ -173,7 +158,7 @@ const OrderHistoryTable = () => {
             </thead>
             <tbody className="bg-white">
               {currentPageData.map((item, index) => (
-                <tr key={item.id} className={`border-b border-customPurple ${index % 2 === 0 ? 'bg-gray-200' : ''}`} onClick={() => handleRowClick(item)}>
+                <tr key={item.id} className={`border-b border-customPurple ${index % 2 === 0 ? 'bg-gray-200' : ''}`}>
                   <td className="px-4 py-1 border-r border-customPurple">{startIndex + index + 1}</td>
                   <td className="px-4 py-1 border-r border-customPurple">
                     {editingRow === item.id ? (

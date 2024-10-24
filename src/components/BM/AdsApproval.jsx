@@ -183,7 +183,7 @@ const AdsApproval = ({ onAdd, view, onToggleView }) => {
             onToggleView={onToggleView}
             currentView={view}
             showAddAndView={true}
-            searchPlaceholder="'Search by name or contact number"
+            searchPlaceholder="Search by name or contact number"
             filterOptions={['Filter1', 'Filter2', 'Filter ']}
             groupByOptions={['Category', 'Price', 'Brand']}
             favoritesOptions={['Favorite', 'Favorite']}

@@ -219,11 +219,6 @@ const AddForm = ({ onBack, onAddSuccess }) => {
         </div>
       )}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1">
-          <button className='flex items-center bg-green-500 rounded-md px-4 py-2 text-white hover:bg-green-600' onClick={handleSubmit}>
-            Submit
-          </button>
-        </div>
       </div>
       <div className="bg-white border border-customPurple rounded-md shadow-custom p-4">
         <div className="mb-4">
@@ -255,27 +250,43 @@ const AddForm = ({ onBack, onAddSuccess }) => {
                 </div>
               </div>
               <div className="flex font-semibold">
-                <label className='w-44'>Invoice Date:</label>
+                <label className='w-28'>Invoice Date:</label>
                 <div className="form-control ">
                   {invoice.invoiceDate}
                 </div>
               </div>
             </div>
             {formData.UserTypeId === 2 && (
-              <div className='flex gap-3 mt-4 mb-4'>
-                <label className='w-48'>Customer :</label>
-                <Select
-                  id="customer"
-                  options={customers}
-                  value={customers.find(option => option.value === formData.UserManagementId)}
-                  onChange={handleCustomerSelect}
-                  placeholder="Select Customer"
-                  isClearable
-                  className='w-[100%]'
-                  onMenuOpen={fetchCustomers}
-                  isLoading={isLoading}
-                />
-              </div>
+              <>
+                <div className='flex gap-3 mt-4 mb-4'>
+                  <label className='w-48'>Customer :</label>
+                  <Select
+                    id="customer"
+                    options={customers}
+                    value={customers.find(option => option.value === formData.UserManagementId)}
+                    onChange={handleCustomerSelect}
+                    placeholder="Select Customer"
+                    isClearable
+                    className='w-[100%]'
+                    onMenuOpen={fetchCustomers}
+                    isLoading={isLoading}
+                  />
+                </div>
+                <div className='flex gap-3 mt-4 mb-4'>
+                  <label className='w-48'>Account :</label>
+                  <Select
+                    id="customer"
+                    options={customers}
+                    value={customers.find(option => option.value === formData.UserManagementId)}
+                    onChange={handleCustomerSelect}
+                    placeholder="Select Account"
+                    isClearable
+                    className='w-[100%]'
+                    onMenuOpen={fetchCustomers}
+                    isLoading={isLoading}
+                  />
+                </div>
+              </>
             )}
             {
               formData.UserTypeId === 1 && (
@@ -313,7 +324,7 @@ const AddForm = ({ onBack, onAddSuccess }) => {
                 >
                   <FaClipboard />
                 </button>
-                <div className='absolute top-10 right-0'>
+                <div className='absolute top-10 right-0 w-40'>
                   {copyMessage && (
                     <div className="text-gray-500 font-bold">
                       {copyMessage}
@@ -378,6 +389,11 @@ const AddForm = ({ onBack, onAddSuccess }) => {
                   readOnly
                 />
               </div>
+            </div>
+            <div className="flex items-center justify-end gap-1">
+              <button className='flex items-center bg-green-500 rounded-md px-4 py-2 text-white hover:bg-green-600' onClick={handleSubmit}>
+                Submit
+              </button>
             </div>
           </div>
         </div>

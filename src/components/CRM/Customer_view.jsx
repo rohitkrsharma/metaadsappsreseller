@@ -18,6 +18,7 @@ const CustomerView = ({ onBack }) => {
     userName: '',
     contactNumber: '',
     profilePicture: '',
+    createdDate: ''
   });
   const [originalData, setOriginalData] = useState(formData);
   const [bmAdsData, setBmAdsData] = useState(null);
@@ -52,6 +53,7 @@ const CustomerView = ({ onBack }) => {
           accountName: user.accountName,
           userName: user.userName,
           contactNumber: user.contactNumber,
+          createdDate: user.createdDate,
           profilePicture: profilePictureUrl,
           userTypeId: user.userTypeId || 2, // Assuming 2 is 'Customer'
         });
@@ -61,6 +63,7 @@ const CustomerView = ({ onBack }) => {
           accountName: user.accountName,
           userName: user.userName,
           contactNumber: user.contactNumber,
+          createdDate: user.createdDate,
           profilePicture: profilePictureUrl,
           userTypeId: user.userTypeId || 2,
         });
@@ -287,7 +290,10 @@ const CustomerView = ({ onBack }) => {
             />
           </TabPanel>
           <TabPanel>
-            {/* Membership tab content */}
+            <div className='flex mt-3 items-center gap-4'>
+              <div className='font-semibold'>Member Since :</div>
+              <div>{formData.createdDate}</div>
+            </div>
           </TabPanel>
           <TabPanel>
             {/* Payments tab content */}
